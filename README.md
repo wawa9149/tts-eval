@@ -5,7 +5,7 @@ TTS 모델/코드베이스가 달라도, **`meta.lst` + WAV 디렉터리만 맞�
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 cd tts-eval
