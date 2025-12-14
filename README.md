@@ -1,7 +1,7 @@
 ## Inference-Free TTS Evaluation Pipeline
 
 이미 생성된 TTS 음성(WAV)을 **WER / Speaker Similarity / Emotion Similarity** 기준으로 평가하는 도구입니다.  
-TTS 모델/코드베이스가 달라도, **`meta.lst` + WAV 디렉터리만 맞추면 공정하게 비교**할 수 있습니다.
+TTS 모델/코드베이스가 달라도, **`meta.lst` + WAV 디렉터리만 맞추면 비교 가능**합니다.
 
 ---
 
