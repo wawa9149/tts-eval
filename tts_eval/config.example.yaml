@@ -1,0 +1,15 @@
+# Example configuration for tts_eval pipeline.
+#
+# 이 파일을 복사해서 `config.yaml` 로 이름을 바꾼 뒤,
+# 실제 환경에 맞게 경로를 수정해서 사용하세요.
+#
+#   cp tts_eval/config.example.yaml tts_eval/config.yaml
+#
+# 기본값은 레포 안에 포함된 작은 데모 세트(SeedTTS 샘플 10개)를 가리킵니다.
+# 상대 경로는 레포 루트 기준으로 해석하는 것을 권장합니다.
+
+data_meta: "examples/seedtts_en/meta.lst"
+prompt_root: "examples/seedtts_en"
+
+
+

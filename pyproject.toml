@@ -1,0 +1,29 @@
+[project]
+name = "tts-eval"
+version = "0.1.0"
+description = "Inference-free TTS evaluation pipeline (WER / Speaker Similarity / Emotion Similarity)"
+authors = [
+  { name = "wawa" }
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "torch",
+  "torchaudio",
+  "librosa",
+  "soundfile",
+  "tqdm",
+  "editdistance",
+  "PyYAML",
+  "transformers>=4.35.0,<5.0.0",
+  "funasr",
+]
+
+[project.urls]
+Homepage = "https://example.com/tts-eval"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+

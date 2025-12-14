@@ -1,0 +1,16 @@
+# eval/requirements.txt
+
+torch
+torchaudio
+librosa
+soundfile
+tqdm
+editdistance
+PyYAML
+
+# Metric models
+transformers>=4.35.0,<5.0.0
+funasr
+
+# Whisper (WER)
+git+https://github.com/openai/whisper.git
