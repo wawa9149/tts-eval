@@ -19,7 +19,7 @@ from funasr import AutoModel as FunASRAutoModel
 # Emotion Similarity (Emotion2Vec+)
 ########################################################
 
-print("[tts_eval.metrics.emotion] Loading Emotion2Vec+ (emotion2vec_plus_base) for ES...")
+print("[tts_eval.core.metrics.emotion] Loading Emotion2Vec+ (emotion2vec_plus_base) for ES...")
 emo_model = FunASRAutoModel(model="iic/emotion2vec_plus_base")
 
 
@@ -85,6 +85,5 @@ def emo_similarity(emb_a: torch.Tensor, emb_b: torch.Tensor) -> float:
         cosine similarity 스칼라 값 (−1.0 ~ 1.0, 1.0에 가까울수록 감정/프로소디가 유사).
     """
     return torch.nn.functional.cosine_similarity(emb_a, emb_b, dim=0).item()
-
 
 

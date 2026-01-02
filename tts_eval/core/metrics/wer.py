@@ -18,7 +18,7 @@ from whisper.tokenizer import get_tokenizer
 
 # 평가 파이프라인 구동 시 한 번만 Whisper 모델을 로드한다.
 # (여러 샘플을 반복 평가할 때 매번 로드하면 너무 느리기 때문)
-print("[tts_eval.metrics.wer] Loading Whisper (large-v3) for WER...")
+print("[tts_eval.core.metrics.wer] Loading Whisper (large-v3) for WER...")
 whisper_model = whisper.load_model("large-v3")
 WHISPER_TOKENIZER = get_tokenizer(True)
 
@@ -40,9 +40,11 @@ def _normalize_text(s: str) -> str:
         from whisper.normalizers import EnglishTextNormalizer
 
         normalizer = EnglishTextNormalizer()
+        print("normalizer", normalizer.normalize(s))
         return normalizer(s)
     except Exception:
         # 3) 최종 fallback: 소문자 + 양끝 공백 제거
+        print("fallback", s.lower().strip())
         return s.lower().strip()
 
 
@@ -52,10 +54,12 @@ def calc_wer(wav, ref_text: str) -> float:
 
     Args:
         wav: 16kHz mono waveform (numpy 1D array or list-like), Whisper 입력용.
-        ref_text: ground-truth 텍스트. meta.lst 의 `ref_text` 에 해당.
+        ref_text: ground-truth 텍스트.
+            - 기본 사용법에서는 meta.lst 의 `synth_text` 컬럼(합성에 사용한 텍스트)을 넘긴다.
+            - 다른 설정에서는 별도의 GT 텍스트를 넘겨도 된다.
 
     Returns:
-        WER (0.0 ~ 1.0 범위, 0에 가까울수록 좋음)
+        WER (0 이상, 0에 가까울수록 좋음. 일반적으로 0~1 근처 값)
     """
     import editdistance
 
@@ -71,6 +75,5 @@ def calc_wer(wav, ref_text: str) -> float:
     hyp_words = hyp_n.split()
     ref_words = ref_n.split()
     return editdistance.eval(hyp_words, ref_words) / max(1, len(ref_words))
-
 
 

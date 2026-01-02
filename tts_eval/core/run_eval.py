@@ -1,4 +1,4 @@
-"""run_eval.py
+"""run_eval.py (moved to tts_eval.core)
 
 Inference-Free TTS Evaluation 엔트리 포인트 스크립트.
 
@@ -39,7 +39,7 @@ def build_eval_jobs(meta_path: str, audio_dir: str):
         audio_dir: 합성 WAV 디렉터리. 각 샘플의 파일명은 `utt_id.wav` 여야 한다.
 
     Returns:
-        job 튜플 리스트 (utt_id, wav_path, ref_text, prompt_path)
+        job 튜플 리스트 (utt_id, wav_path, gt_text, prompt_path)
     """
     items = load_eval_items(meta_path)
     jobs = []
@@ -52,7 +52,12 @@ def build_eval_jobs(meta_path: str, audio_dir: str):
             # Skip samples that haven't been synthesized
             continue
 
-        jobs.append((utt_id, wav_path, it["ref_text"], it["prompt"]))
+        # NOTE:
+        # - 평가에서 "모델이 어떤 텍스트를 잘 따라 읽었는가?" 를 보려면
+        #   합성에 실제로 사용한 텍스트(synth_text)를 GT로 쓰는 것이 자연스럽다.
+        # - 따라서 여기서는 meta.lst 의 4번째 컬럼(synth_text)을
+        #   gt_text 로 사용하여 WER 을 계산한다.
+        jobs.append((utt_id, wav_path, it["text"], it["prompt"]))
 
     return jobs
 
@@ -62,7 +67,7 @@ def main():
     CLI 진입점.
 
     예시:
-        python -m tts_eval.run_eval \\
+        python -m tts_eval.core.run_eval \\
             --meta /path/to/meta.lst \\
             --wav_dir /path/to/synth_wavs \\
             --out_dir /path/to/output_dir

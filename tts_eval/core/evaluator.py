@@ -1,4 +1,4 @@
-"""evaluator.py
+"""evaluator.py (moved to tts_eval.core)
 
 TTS 인퍼런스 코드와 완전히 분리된 **평가 코어 모듈**.
 
@@ -16,9 +16,9 @@ from typing import List, Dict, Tuple
 import librosa
 import yaml
 
-from .metrics.wer import calc_wer
-from .metrics.speaker import get_spk_emb, spk_similarity
-from .metrics.emotion import get_emo_emb, emo_similarity
+from ..metrics.wer import calc_wer
+from ..metrics.speaker import get_spk_emb, spk_similarity
+from ..metrics.emotion import get_emo_emb, emo_similarity
 
 
 ########################################################
@@ -30,7 +30,7 @@ from .metrics.emotion import get_emo_emb, emo_similarity
 # - 환경변수 EVAL_CONFIG 로 덮어쓸 수 있음
 _CONFIG_PATH = os.environ.get(
     "EVAL_CONFIG",
-    os.path.join(os.path.dirname(__file__), "config.yaml"),
+    os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.yaml"),
 )
 
 
@@ -69,6 +69,10 @@ _CFG = _load_config(_CONFIG_PATH)
 DATA_META = _CFG["data_meta"]
 PROMPT_ROOT = _CFG["prompt_root"]
 
+# 환경변수 기반 메트릭 온/오프 스위치
+_DISABLE_SS = os.environ.get("DISABLE_SS", "0") in ("1", "true", "True")
+_DISABLE_ES = os.environ.get("DISABLE_ES", "0") in ("1", "true", "True")
+
 
 ########################################################
 # Helper: meta loader
@@ -94,8 +98,21 @@ def load_eval_items(meta_path: str) -> List[Dict]:
     """
     items: List[Dict] = []
     with open(meta_path, "r", encoding="utf-8") as f:
-        for line in f:
-            utt_id, ref_text, prompt_rel, synth_text = line.strip().split("|")
+        for raw in f:
+            line = raw.strip()
+            # 빈 줄이나 주석(#)은 무시
+            if not line or line.startswith("#"):
+                continue
+
+            parts = line.split("|")
+            if len(parts) != 4:
+                raise ValueError(
+                    f"Invalid line in meta file '{meta_path}':\n"
+                    f"{line}\n"
+                    "Expected format: utt_id|ref_text|prompt_rel|synth_text"
+                )
+
+            utt_id, ref_text, prompt_rel, synth_text = parts
             items.append(
                 {
                     "utt_id": utt_id,
@@ -114,42 +131,49 @@ def load_eval_items(meta_path: str) -> List[Dict]:
 
 def eval_worker(job: Tuple[str, str, str, str]):
     """
-    단일 (utt_id, synth_wav, ref_text, prompt_wav) 쌍에 대해 WER / SS / ES 를 계산한다.
+    단일 (utt_id, synth_wav, gt_text, prompt_wav) 쌍에 대해 WER / SS / ES 를 계산한다.
 
     Args:
-        job: (utt_id, synth_wav_path, ref_text, prompt_wav_path)
+        job: (utt_id, synth_wav_path, gt_text, prompt_wav_path)
 
     Returns:
         (utt_id, wer, ss, es) 튜플.
-        - wer: Whisper 기반 WER (0.0~1.0, 낮을수록 좋음)
+        - wer: Whisper 기반 WER (0 이상, 낮을수록 좋음. 일반적으로 0~1 근처 값)
         - ss : WavLM-SV 기반 speaker similarity (−1.0~1.0, 높을수록 유사)
+               환경변수 DISABLE_SS=1 이면 계산하지 않고 NaN 반환.
         - es : Emotion2Vec+ 기반 emotion similarity (−1.0~1.0, 높을수록 유사)
+               환경변수 DISABLE_ES=1 이면 계산하지 않고 NaN 반환.
     """
     utt_id, wav_path, ref_text, prompt_path = job
 
     wav, _ = librosa.load(wav_path, sr=16000)
     prompt_wav, _ = librosa.load(prompt_path, sr=16000)
 
-    # WER
+    # WER: gt_text(대개 meta.lst 의 synth_text 컬럼)를 기준으로 계산
     wer = calc_wer(wav, ref_text)
 
     # SS
-    try:
-        emb_pred = get_spk_emb(wav)
-        emb_prompt = get_spk_emb(prompt_wav)
-        ss = spk_similarity(emb_pred, emb_prompt)
-    except Exception:
+    if _DISABLE_SS:
         ss = float("nan")
+    else:
+        try:
+            emb_pred = get_spk_emb(wav)
+            emb_prompt = get_spk_emb(prompt_wav)
+            ss = spk_similarity(emb_pred, emb_prompt)
+        except Exception:
+            ss = float("nan")
 
     # ES
-    try:
-        emo_pred = get_emo_emb(wav)
-        emo_prompt = get_emo_emb(prompt_wav)
-        es = emo_similarity(emo_pred, emo_prompt)
-    except Exception:
+    if _DISABLE_ES:
         es = float("nan")
+    else:
+        try:
+            emo_pred = get_emo_emb(wav)
+            emo_prompt = get_emo_emb(prompt_wav)
+            es = emo_similarity(emo_pred, emo_prompt)
+        except Exception:
+            es = float("nan")
 
     return utt_id, wer, ss, es
-
 
 

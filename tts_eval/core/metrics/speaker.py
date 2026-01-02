@@ -4,9 +4,6 @@ Speaker Similarity(SS) 계산 모듈.
 - 백엔드로 HuggingFace의 `microsoft/wavlm-base-plus-sv` (WavLM-SV)를 사용해
   화자 임베딩을 추출하고,
 - 참조/합성 음성 간 코사인 유사도를 화자 유사도 점수로 사용한다.
-
-이 모듈 역시 **TTS 모델과 무관하게**, 이미 생성된 WAV만 있으면
-동일한 방식으로 화자 유사도를 측정하기 위한 용도로 설계되었다.
 """
 
 import torch
@@ -21,7 +18,7 @@ from transformers import Wav2Vec2FeatureExtractor, WavLMForXVector
 device = "cuda" if torch.cuda.is_available() else "cpu"
 WAVLM_SV_MODEL = "microsoft/wavlm-base-plus-sv"
 
-print(f"[tts_eval.metrics.speaker] Loading WavLM-SV for SS: {WAVLM_SV_MODEL} on {device}...")
+print(f"[tts_eval.core.metrics.speaker] Loading WavLM-SV for SS: {WAVLM_SV_MODEL} on {device}...")
 wavlm_feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(WAVLM_SV_MODEL)
 wavlm_sv_model = WavLMForXVector.from_pretrained(WAVLM_SV_MODEL).to(device)
 wavlm_sv_model.eval()
@@ -68,6 +65,5 @@ def spk_similarity(emb_a: torch.Tensor, emb_b: torch.Tensor) -> float:
         cosine similarity 스칼라 값 (−1.0 ~ 1.0, 1.0에 가까울수록 유사한 화자).
     """
     return torch.nn.functional.cosine_similarity(emb_a, emb_b, dim=0).item()
-
 
 
